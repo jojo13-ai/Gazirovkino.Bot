@@ -19,13 +19,26 @@ Console.ReadLine();  // Блокирует выполнение программ
 cts.Cancel();        // Останавливает работу, посылая сигнал для отмены.
 return;
 
-async Task OnMessage(Message msg, UpdateType type)
+async Task OnMessage(Message message, UpdateType type)
 {
-    if (msg.Text is null) 
+    if (message.Text is null) 
         return;
 
-    Console.WriteLine($"Received {type} '{msg.Text}' in {msg.Chat}");
+    Console.WriteLine($"Received {type} '{message.Text}' in {message.Chat}");
 
-    // Ответ в этот же чат с текстом, отправленным пользователем
-    await bot.SendMessage(msg.Chat, $"{msg.From} said: {msg.Text}");
+    if (message.Text.StartsWith("/start"))
+    {
+        var welcomeMessage = GetWelcomeMessage();
+        await bot.SendMessage(chatId: message.Chat.Id, text: welcomeMessage);
+        return;
+    }
+
+    // Добавить сюда другие условия в будущем...
+
+    await bot.SendMessage(chatId: message.Chat.Id, text: "Неопознанная команда, попробуйте еще...");
+}
+
+string GetWelcomeMessage()
+{
+    return "Добро пожаловать! Этот бот позволяет вам ... (опишите функционал бота). Используйте доступные команды для взаимодействия с ботом.";
 }
