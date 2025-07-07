@@ -4,13 +4,17 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
-const string token = ""; //TODO разобраться как не коммитить ключ
+const string token =""; //TODO разобраться как не коммитить ключ"
 
 using var cts = new CancellationTokenSource();
+
 var bot = new TelegramBotClient(token, cancellationToken: cts.Token);
 
+
 var botUser = await bot.GetMe(); // регистрация нашего бота в Телеграм
+
 
 bot.OnMessage += OnMessage;
 
@@ -28,8 +32,10 @@ async Task OnMessage(Message message, UpdateType type)
 
     if (message.Text.StartsWith("/start"))
     {
+        //Приветствие и вывод кнопок 
         var welcomeMessage = GetWelcomeMessage();
-        await bot.SendMessage(chatId: message.Chat.Id, text: welcomeMessage);
+        var replyKeyboard = GetMainKeyboard(); // Генерация кнопок
+        await bot.SendMessage(chatId: message.Chat.Id, text: welcomeMessage, replyMarkup: replyKeyboard);
         return;
     }
 
@@ -40,5 +46,20 @@ async Task OnMessage(Message message, UpdateType type)
 
 string GetWelcomeMessage()
 {
-    return "Добро пожаловать! Этот бот позволяет вам ... (опишите функционал бота). Используйте доступные команды для взаимодействия с ботом.";
+    return "Добро пожаловать! Этот бот позволяет вам найти подходящую газировку с нужным вкусом). Используйте доступные команды для взаимодействия с ботом.";
 }
+
+// Метод для создания кнопок
+ReplyKeyboardMarkup GetMainKeyboard()
+{
+    // Создаем кнопки
+    return new ReplyKeyboardMarkup(new[]
+    {
+        new KeyboardButton[] { "Поиск газировки", "Помощь" } // Две основные кнопки
+    })
+    {
+        ResizeKeyboard = true // Уменьшен размер кнопок для удобства
+    };
+}
+
+
