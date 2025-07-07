@@ -9,23 +9,20 @@ using Telegram.Bot.Types.ReplyMarkups;
 const string token =""; //TODO разобраться как не коммитить ключ"
 
 using var cts = new CancellationTokenSource();
-
 var bot = new TelegramBotClient(token, cancellationToken: cts.Token);
-
-
 var botUser = await bot.GetMe(); // регистрация нашего бота в Телеграм
-
 
 bot.OnMessage += OnMessage;
 
 Console.WriteLine($"@{botUser.Username} is running... Press Enter to terminate");
-Console.ReadLine();  // Блокирует выполнение программы, ожидая ввода.
-cts.Cancel();        // Останавливает работу, посылая сигнал для отмены.
+Console.ReadLine(); // Блокирует выполнение программы, ожидая ввода.
+cts.Cancel(); // Останавливает работу, посылая сигнал для отмены.
+
 return;
 
 async Task OnMessage(Message message, UpdateType type)
 {
-    if (message.Text is null) 
+    if (message.Text is null)
         return;
 
     Console.WriteLine($"Received {type} '{message.Text}' in {message.Chat}");
@@ -36,6 +33,7 @@ async Task OnMessage(Message message, UpdateType type)
         var welcomeMessage = GetWelcomeMessage();
         var replyKeyboard = GetMainKeyboard(); // Генерация кнопок
         await bot.SendMessage(chatId: message.Chat.Id, text: welcomeMessage, replyMarkup: replyKeyboard);
+
         return;
     }
 
@@ -46,20 +44,19 @@ async Task OnMessage(Message message, UpdateType type)
 
 string GetWelcomeMessage()
 {
-    return "Добро пожаловать! Этот бот позволяет вам найти подходящую газировку с нужным вкусом). Используйте доступные команды для взаимодействия с ботом.";
+    return
+        "Добро пожаловать! Этот бот позволяет вам найти подходящую газировку с нужным вкусом). Используйте доступные команды для взаимодействия с ботом.";
 }
 
-// Метод для создания кнопок
 ReplyKeyboardMarkup GetMainKeyboard()
 {
-    // Создаем кнопки
-    return new ReplyKeyboardMarkup(new[]
-    {
-        new KeyboardButton[] { "Поиск газировки", "Помощь" } // Две основные кнопки
-    })
+    var buttons = new KeyboardButton[] { "Поиск газировки", "Помощь" };
+    var keyboard = new[] { buttons };
+
+    var keyboardMarkup = new ReplyKeyboardMarkup(keyboard)
     {
         ResizeKeyboard = true // Уменьшен размер кнопок для удобства
     };
+
+    return keyboardMarkup;
 }
-
-
