@@ -37,6 +37,11 @@ async Task OnMessage(Message message, UpdateType type)
         return;
     }
 
+    if (message.Text == "Поиск газировки")
+    {
+           
+    }
+
     // Добавить сюда другие условия в будущем...
 
     await bot.SendMessage(chatId: message.Chat.Id, text: "Неопознанная команда, попробуйте еще...");
