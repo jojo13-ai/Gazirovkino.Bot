@@ -1,3 +1,51 @@
-﻿/Gazirovkino.Bot/bin/
+# Build outputs
+/Gazirovkino.Bot/bin/
+/Gazirovkino.Bot/obj/
 
-/.idea
+# JetBrains Rider / IntelliJ
+/.idea/
+*.sln.iml
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+*.DotSettings.user.*
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/shelf/
+.idea/**/dataSources/
+.idea/**/dataSources.ids
+.idea/**/dataSources.local.xml
+.idea/**/dataSources.xml
+.idea/**/dataSources.xml.*
+.idea/**/dataSources.local.xml.*
+.idea/**/sqlDataSources.xml
+.idea/**/dynamic.xml
+.idea/**/uiDesigner.xml
+.idea/**/gradle.xml
+.idea/**/libraries/
+.idea/**/modules.xml
+.idea/**/projectSettingsUpdater.xml
+.idea/**/contentModel.xml
+.idea/**/encodings.xml
+.idea/**/misc.xml
+.idea/**/vcs.xml
+.idea/**/runConfigurations.xml
+
+# Visual Studio / VS Code
+/.vs/
+/.vscode/
+*.code-workspace
+.vscode/*.code-snippets
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# OS / editor cruft
+Thumbs.db
+Desktop.ini
+.DS_Store
+*~
