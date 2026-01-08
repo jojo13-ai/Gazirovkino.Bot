@@ -1,6 +1,11 @@
 # Build outputs
-/Gazirovkino.Bot/bin/
-/Gazirovkino.Bot/obj/
+**/bin/
+**/obj/
+**/TestResults/
+**/artifacts/
+*.nupkg
+*.snupkg
+*.nuspec
 
 # JetBrains Rider / IntelliJ
 /.idea/
@@ -43,6 +48,18 @@
 .vscode/tasks.json
 .vscode/launch.json
 .vscode/extensions.json
+
+# NuGet / .NET
+.nuget/
+packages/
+**/packages/
+**/*.userprefs
+**/*.rsuser
+**/*.sln.ide/
+**/*.dotCover
+**/*.dotCover.*
+**/*.coverage
+**/*.coveragexml
 
 # OS / editor cruft
 Thumbs.db
