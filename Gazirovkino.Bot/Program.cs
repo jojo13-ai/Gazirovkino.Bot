@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Gazirovkino.Bot.Data;
+using Microsoft.EntityFrameworkCore;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -9,6 +11,11 @@ using Telegram.Bot.Types.ReplyMarkups;
 const string token =""; //TODO разобраться как не коммитить ключ"
 
 using var cts = new CancellationTokenSource();
+
+var dbOptions = new DbContextOptionsBuilder<GazirovkinoDbContext>().Options;
+await using var dbContext = new GazirovkinoDbContext(dbOptions);
+await dbContext.Database.MigrateAsync(cts.Token);
+
 var bot = new TelegramBotClient(token, cancellationToken: cts.Token);
 var botUser = await bot.GetMe(); // регистрация нашего бота в Телеграм
 
