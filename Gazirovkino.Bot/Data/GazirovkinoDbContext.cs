@@ -1,5 +1,7 @@
+using System;
 using Gazirovkino.Bot.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Gazirovkino.Bot.Data;
 
@@ -14,6 +16,23 @@ public class GazirovkinoDbContext : DbContext
     public DbSet<Survey> Surveys => Set<Survey>();
     public DbSet<Criteria> Criteria => Set<Criteria>();
     public DbSet<Interview> Interviews => Set<Interview>();
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (optionsBuilder.IsConfigured)
+            return;
+
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
+
+        var connectionString = configuration.GetConnectionString("GazirovkinoDb");
+        if (string.IsNullOrWhiteSpace(connectionString))
+            throw new InvalidOperationException("Connection string 'GazirovkinoDb' not found.");
+
+        optionsBuilder.UseNpgsql(connectionString);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
