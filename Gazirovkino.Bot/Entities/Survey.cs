@@ -9,4 +9,5 @@ public class Survey
     public DateTime DateCreated { get; init; }
     public SurveyStatus Status { get; set; }
     public DateTime? DateFinished { get; set; }
+    public DateTime? DateTerminated { get; set; }
 }
