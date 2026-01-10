@@ -7,9 +7,9 @@ public class Survey
 {
     public Guid Id { get; init; }
     public Guid UserId { get; init; }
-    public GazirovkaTaste Taste { get; init; }
-    public GazirovkaAdditions Additions { get; init; }
-    public GazirovkaColor Color { get; init; }
+    public GazirovkaTaste Taste { get; set; }
+    public GazirovkaAdditions Additions { get; set; }
+    public GazirovkaColor Color { get; set; }
     public SurveyStatus Status { get; set; }
     public DateTime DateCreated { get; init; }
     public DateTime? DateFinished { get; set; }

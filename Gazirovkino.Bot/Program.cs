@@ -1,16 +1,23 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 using Gazirovkino.Bot.Data;
+using Gazirovkino.Bot.Entities;
+using Gazirovkino.Bot.Entities.Gazirovka;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-const string token =""; //TODO разобраться как не коммитить ключ"
+const string token = ""; //TODO разобраться как не коммитить ключ"
 
 using var cts = new CancellationTokenSource();
+
+var serviceProvider = BuildServiceProvider();
 
 var dbOptions = new DbContextOptionsBuilder<GazirovkinoDbContext>().Options;
 await using var dbContext = new GazirovkinoDbContext(dbOptions);
@@ -25,12 +32,22 @@ Console.WriteLine($"@{botUser.Username} is running... Press Enter to terminate")
 Console.ReadLine(); // Блокирует выполнение программы, ожидая ввода.
 cts.Cancel(); // Останавливает работу, посылая сигнал для отмены.
 
+await serviceProvider.DisposeAsync();
+
 return;
 
 async Task OnMessage(Message message, UpdateType type)
 {
     if (message.Text is null)
         return;
+
+    if (message.From is null)
+        return;
+
+    await using var scope = serviceProvider.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<GazirovkinoDbContext>();
+
+    var user = await GetOrCreateUserAsync(db, message, cts.Token);
 
     Console.WriteLine($"Received {type} '{message.Text}' in {message.Chat}");
 
@@ -46,12 +63,78 @@ async Task OnMessage(Message message, UpdateType type)
 
     if (message.Text == "Поиск газировки")
     {
-           
+        var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
+
+        var tasteKeyboard = GetTasteKeyboard();
+
+        await bot.SendMessage(chatId: message.Chat.Id, text: "Выберите вкус:", replyMarkup: tasteKeyboard);
+        return;
     }
 
-    // Добавить сюда другие условия в будущем...
+    if (Enum.TryParse<GazirovkaTaste>(message.Text, ignoreCase: true, out var taste) &&
+        taste != GazirovkaTaste.Unknown)
+    {
+        var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
+
+        currentSurvey.Taste = taste;
+        await db.SaveChangesAsync(cts.Token);
+
+        await bot.SendMessage(
+            chatId: message.Chat.Id,
+            text: $"Вкус сохранен: {taste}.",
+            replyMarkup: GetMainKeyboard());
+        return;
+    }
 
     await bot.SendMessage(chatId: message.Chat.Id, text: "Неопознанная команда, попробуйте еще...");
+}
+
+async Task<BotUser> GetOrCreateUserAsync(GazirovkinoDbContext db, Message message, CancellationToken cancellationToken)
+{
+    var from = message.From!;
+    var existingUser = await db.Users.SingleOrDefaultAsync(x => x.TelegramUserId == from.Id, cancellationToken);
+    if (existingUser is not null)
+        return existingUser;
+
+    var user = new BotUser
+    {
+        Id = Guid.NewGuid(),
+        TelegramUserId = from.Id,
+        Username = from.Username,
+        FirstName = from.FirstName,
+        LastName = from.LastName,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    db.Users.Add(user);
+    await db.SaveChangesAsync(cancellationToken);
+
+    return user;
+}
+
+async Task<Survey> GetOrCreateCurrentSurveyAsync(GazirovkinoDbContext db, BotUser user,
+    CancellationToken cancellationToken)
+{
+    var existingSurvey = await db.Surveys
+        .SingleOrDefaultAsync(x => x.UserId == user.Id && x.Status == SurveyStatus.StartSearch, cancellationToken);
+    if (existingSurvey is not null)
+        return existingSurvey;
+
+    var survey = new Survey
+    {
+        Id = Guid.NewGuid(),
+        UserId = user.Id,
+        Taste = GazirovkaTaste.Unknown,
+        Additions = default,
+        Color = default,
+        Status = SurveyStatus.StartSearch,
+        DateCreated = DateTime.UtcNow
+    };
+
+    db.Surveys.Add(survey);
+    await db.SaveChangesAsync(cancellationToken);
+
+    return survey;
 }
 
 string GetWelcomeMessage()
@@ -71,4 +154,36 @@ ReplyKeyboardMarkup GetMainKeyboard()
     };
 
     return keyboardMarkup;
+}
+
+ReplyKeyboardMarkup GetTasteKeyboard()
+{
+    var tasteButtons = Enum.GetValues<GazirovkaTaste>()
+        .Where(taste => taste != GazirovkaTaste.Unknown)
+        .Select(taste => new KeyboardButton(taste.ToString()))
+        .ToArray();
+    var keyboard = new[] { tasteButtons };
+
+    var keyboardMarkup = new ReplyKeyboardMarkup(keyboard)
+    {
+        ResizeKeyboard = true
+    };
+
+    return keyboardMarkup;
+}
+
+ServiceProvider BuildServiceProvider()
+{
+    var configuration = new ConfigurationBuilder()
+        .SetBasePath(AppContext.BaseDirectory)
+        .AddJsonFile("appsettings.json", optional: false)
+        .Build();
+    var connectionString = configuration.GetConnectionString("GazirovkinoDb")
+                           ?? throw new InvalidOperationException("Missing connection string: GazirovkinoDb");
+
+    var services = new ServiceCollection();
+    services.AddDbContext<GazirovkinoDbContext>(options =>
+        options.UseNpgsql(connectionString));
+
+    return services.BuildServiceProvider();
 }

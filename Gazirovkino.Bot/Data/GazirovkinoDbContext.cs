@@ -12,7 +12,7 @@ public class GazirovkinoDbContext : DbContext
     {
     }
 
-    public DbSet<User> Users => Set<User>();
+    public DbSet<BotUser> Users => Set<BotUser>();
     public DbSet<Survey> Surveys => Set<Survey>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -34,10 +34,12 @@ public class GazirovkinoDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<User>(entity =>
+        modelBuilder.Entity<BotUser>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.TelegramUserId).IsRequired();
             entity.Property(x => x.CreatedAt).IsRequired();
+            entity.HasIndex(x => x.TelegramUserId).IsUnique();
         });
 
         modelBuilder.Entity<Survey>(entity =>
@@ -48,7 +50,7 @@ public class GazirovkinoDbContext : DbContext
             entity.Property(x => x.Status).IsRequired();
 
             entity.HasIndex(x => x.UserId);
-            entity.HasOne<User>()
+            entity.HasOne<BotUser>()
                 .WithMany()
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
