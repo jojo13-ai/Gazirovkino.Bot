@@ -2,8 +2,8 @@ namespace Gazirovkino.Bot.Entities.Gazirovka;
 
 public enum GazirovkaTaste
 {
-    Unknown = 0,
-    Cherry = 1,
-    Orange = 2,
-    Cola = 3
+    UnknownTaste = 0,
+    CherryTaste = 1,
+    OrangeTaste = 2,
+    ColaTaste = 3
 }

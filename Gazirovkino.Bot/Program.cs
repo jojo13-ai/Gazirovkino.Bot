@@ -72,7 +72,7 @@ async Task OnMessage(Message message, UpdateType type)
     }
 
     if (Enum.TryParse<GazirovkaTaste>(message.Text, ignoreCase: true, out var taste) &&
-        taste != GazirovkaTaste.Unknown)
+        taste != GazirovkaTaste.UnknownTaste)
     {
         var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
 
@@ -124,7 +124,7 @@ async Task<Survey> GetOrCreateCurrentSurveyAsync(GazirovkinoDbContext db, BotUse
     {
         Id = Guid.NewGuid(),
         UserId = user.Id,
-        Taste = GazirovkaTaste.Unknown,
+        Taste = GazirovkaTaste.UnknownTaste,
         Additions = default,
         Color = default,
         Status = SurveyStatus.StartSearch,
@@ -159,7 +159,7 @@ ReplyKeyboardMarkup GetMainKeyboard()
 ReplyKeyboardMarkup GetTasteKeyboard()
 {
     var tasteButtons = Enum.GetValues<GazirovkaTaste>()
-        .Where(taste => taste != GazirovkaTaste.Unknown)
+        .Where(taste => taste != GazirovkaTaste.UnknownTaste)
         .Select(taste => new KeyboardButton(taste.ToString()))
         .ToArray();
     var keyboard = new[] { tasteButtons };
