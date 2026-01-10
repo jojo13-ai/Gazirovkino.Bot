@@ -81,7 +81,21 @@ async Task OnMessage(Message message, UpdateType type)
 
         await bot.SendMessage(
             chatId: message.Chat.Id,
-            text: $"Вкус сохранен: {taste}.",
+            text: $"Вкус сохранен: {taste}. Выберите цвет:",
+            replyMarkup: GetColorKeyboard());
+        return;
+    }
+
+    if (Enum.TryParse<GazirovkaColor>(message.Text, ignoreCase: true, out var color))
+    {
+        var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
+
+        currentSurvey.Color = color;
+        await db.SaveChangesAsync(cts.Token);
+
+        await bot.SendMessage(
+            chatId: message.Chat.Id,
+            text: $"Цвет сохранен: {color}.",
             replyMarkup: GetMainKeyboard());
         return;
     }
@@ -163,6 +177,21 @@ ReplyKeyboardMarkup GetTasteKeyboard()
         .Select(taste => new KeyboardButton(taste.ToString()))
         .ToArray();
     var keyboard = new[] { tasteButtons };
+
+    var keyboardMarkup = new ReplyKeyboardMarkup(keyboard)
+    {
+        ResizeKeyboard = true
+    };
+
+    return keyboardMarkup;
+}
+
+ReplyKeyboardMarkup GetColorKeyboard()
+{
+    var colorButtons = Enum.GetValues<GazirovkaColor>()
+        .Select(color => new KeyboardButton(color.ToString()))
+        .ToArray();
+    var keyboard = new[] { colorButtons };
 
     var keyboardMarkup = new ReplyKeyboardMarkup(keyboard)
     {
