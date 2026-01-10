@@ -95,7 +95,22 @@ async Task OnMessage(Message message, UpdateType type)
 
         await bot.SendMessage(
             chatId: message.Chat.Id,
-            text: $"Цвет сохранен: {color}.",
+            text: $"Цвет сохранен: {color}. Выберите добавки:",
+            replyMarkup: GetAdditionsKeyboard());
+        return;
+    }
+
+    if (Enum.TryParse<GazirovkaAdditions>(message.Text, ignoreCase: true, out var additions))
+    {
+        var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
+
+        currentSurvey.Additions = additions;
+        await db.SaveChangesAsync(cts.Token);
+
+        var result = await CalculateGazirovka(db, currentSurvey, cts.Token);
+        await bot.SendMessage(
+            chatId: message.Chat.Id,
+            text: result,
             replyMarkup: GetMainKeyboard());
         return;
     }
@@ -199,6 +214,41 @@ ReplyKeyboardMarkup GetColorKeyboard()
     };
 
     return keyboardMarkup;
+}
+
+ReplyKeyboardMarkup GetAdditionsKeyboard()
+{
+    var additionsButtons = Enum.GetValues<GazirovkaAdditions>()
+        .Select(additions => new KeyboardButton(additions.ToString()))
+        .ToArray();
+    var keyboard = new[] { additionsButtons };
+
+    var keyboardMarkup = new ReplyKeyboardMarkup(keyboard)
+    {
+        ResizeKeyboard = true
+    };
+
+    return keyboardMarkup;
+}
+
+async Task<string> CalculateGazirovka(GazirovkinoDbContext db, Survey survey, CancellationToken cancellationToken)
+{
+    if (survey.Taste == GazirovkaTaste.UnknownTaste)
+        return "Ошибка: не выбран вкус газировки. Попробуйте снова с выбора вкуса.";
+
+    if (!Enum.IsDefined(typeof(GazirovkaColor), survey.Color))
+        return "Ошибка: не выбран цвет газировки. Попробуйте снова с выбора цвета.";
+
+    if (!Enum.IsDefined(typeof(GazirovkaAdditions), survey.Additions))
+        return "Ошибка: не выбраны добавки. Попробуйте снова с выбора добавок.";
+
+    survey.Result = "Cola";
+    survey.Status = SurveyStatus.FinishedSuccessfully;
+    survey.DateFinished = DateTime.UtcNow;
+
+    await db.SaveChangesAsync(cancellationToken);
+
+    return $"Ваш напиток: {survey.Result}.";
 }
 
 ServiceProvider BuildServiceProvider()

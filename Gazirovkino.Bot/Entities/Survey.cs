@@ -10,6 +10,7 @@ public class Survey
     public GazirovkaTaste Taste { get; set; }
     public GazirovkaAdditions Additions { get; set; }
     public GazirovkaColor Color { get; set; }
+    public string? Result { get; set; }
     public SurveyStatus Status { get; set; }
     public DateTime DateCreated { get; init; }
     public DateTime? DateFinished { get; set; }
