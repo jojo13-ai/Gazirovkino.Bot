@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
@@ -25,6 +26,29 @@ await dbContext.Database.MigrateAsync(cts.Token);
 
 var bot = new TelegramBotClient(token, cancellationToken: cts.Token);
 var botUser = await bot.GetMe(); // регистрация нашего бота в Телеграм
+
+var tasteToRu = new Dictionary<GazirovkaTaste, string>
+{
+    { GazirovkaTaste.CherryTaste, "Вишня" },
+    { GazirovkaTaste.OrangeTaste, "Апельсин" },
+    { GazirovkaTaste.ColaTaste, "Кола" }
+};
+var ruToTaste = tasteToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+var colorToRu = new Dictionary<GazirovkaColor, string>
+{
+    { GazirovkaColor.Dark, "Темный" },
+    { GazirovkaColor.Orange, "Оранжевый" },
+    { GazirovkaColor.Clear, "Прозрачный" }
+};
+var ruToColor = colorToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
+
+var additionsToRu = new Dictionary<GazirovkaAdditions, string>
+{
+    { GazirovkaAdditions.NoAdditions, "Без добавок" },
+    { GazirovkaAdditions.Jelly, "Желе" }
+};
+var ruToAdditions = additionsToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
 
 bot.OnMessage += OnMessage;
 
@@ -71,8 +95,7 @@ async Task OnMessage(Message message, UpdateType type)
         return;
     }
 
-    if (Enum.TryParse<GazirovkaTaste>(message.Text, ignoreCase: true, out var taste) &&
-        taste != GazirovkaTaste.UnknownTaste)
+    if (ruToTaste.TryGetValue(message.Text, out var taste))
     {
         var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
 
@@ -81,12 +104,12 @@ async Task OnMessage(Message message, UpdateType type)
 
         await bot.SendMessage(
             chatId: message.Chat.Id,
-            text: $"Вкус сохранен: {taste}. Выберите цвет:",
+            text: $"Вкус сохранен: {tasteToRu[taste]}. Выберите цвет:",
             replyMarkup: GetColorKeyboard());
         return;
     }
 
-    if (Enum.TryParse<GazirovkaColor>(message.Text, ignoreCase: true, out var color))
+    if (ruToColor.TryGetValue(message.Text, out var color))
     {
         var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
 
@@ -95,12 +118,12 @@ async Task OnMessage(Message message, UpdateType type)
 
         await bot.SendMessage(
             chatId: message.Chat.Id,
-            text: $"Цвет сохранен: {color}. Выберите добавки:",
+            text: $"Цвет сохранен: {colorToRu[color]}. Выберите добавки:",
             replyMarkup: GetAdditionsKeyboard());
         return;
     }
 
-    if (Enum.TryParse<GazirovkaAdditions>(message.Text, ignoreCase: true, out var additions))
+    if (ruToAdditions.TryGetValue(message.Text, out var additions))
     {
         var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
 
@@ -187,9 +210,8 @@ ReplyKeyboardMarkup GetMainKeyboard()
 
 ReplyKeyboardMarkup GetTasteKeyboard()
 {
-    var tasteButtons = Enum.GetValues<GazirovkaTaste>()
-        .Where(taste => taste != GazirovkaTaste.UnknownTaste)
-        .Select(taste => new KeyboardButton(taste.ToString()))
+    var tasteButtons = tasteToRu.Values
+        .Select(text => new KeyboardButton(text))
         .ToArray();
     var keyboard = new[] { tasteButtons };
 
@@ -203,8 +225,8 @@ ReplyKeyboardMarkup GetTasteKeyboard()
 
 ReplyKeyboardMarkup GetColorKeyboard()
 {
-    var colorButtons = Enum.GetValues<GazirovkaColor>()
-        .Select(color => new KeyboardButton(color.ToString()))
+    var colorButtons = colorToRu.Values
+        .Select(text => new KeyboardButton(text))
         .ToArray();
     var keyboard = new[] { colorButtons };
 
@@ -218,8 +240,8 @@ ReplyKeyboardMarkup GetColorKeyboard()
 
 ReplyKeyboardMarkup GetAdditionsKeyboard()
 {
-    var additionsButtons = Enum.GetValues<GazirovkaAdditions>()
-        .Select(additions => new KeyboardButton(additions.ToString()))
+    var additionsButtons = additionsToRu.Values
+        .Select(text => new KeyboardButton(text))
         .ToArray();
     var keyboard = new[] { additionsButtons };
 
