@@ -289,11 +289,6 @@ async Task<string> CalculateGazirovka(GazirovkinoDbContext db, Survey survey, Ca
         return "Ошибка: не выбраны добавки. Попробуйте снова с выбора добавок.";
 
     string gazirovka = string.Empty;
-
-    if (survey.Additions == GazirovkaAdditions.Jelly)
-    {
-        gazirovka = "A4 Cola";
-    }
     
     if (survey.Taste == GazirovkaTaste.CherryTaste)
     {
@@ -308,6 +303,11 @@ async Task<string> CalculateGazirovka(GazirovkinoDbContext db, Survey survey, Ca
     if (survey.Taste == GazirovkaTaste.OrangeTaste)
     {
         gazirovka = "Fancy";
+    }
+    
+    if (survey.Additions == GazirovkaAdditions.Jelly)
+    {
+        gazirovka = "A4 Cola";
     }
 
     if (string.IsNullOrEmpty(gazirovka))
