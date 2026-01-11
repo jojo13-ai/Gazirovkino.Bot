@@ -130,10 +130,12 @@ async Task OnMessage(Message message, UpdateType type)
         currentSurvey.Additions = additions;
         await db.SaveChangesAsync(cts.Token);
 
-        var result = await CalculateGazirovka(db, currentSurvey, cts.Token);
+        var gazirovka = await CalculateGazirovka(db, currentSurvey, cts.Token);
+        var result = $"Ваша газировка: {gazirovka}.";
+        
         await bot.SendMessage(
             chatId: message.Chat.Id,
-            text: result,
+            text: gazirovka,
             replyMarkup: GetMainKeyboard());
         return;
     }
@@ -297,7 +299,7 @@ async Task<string> CalculateGazirovka(GazirovkinoDbContext db, Survey survey, Ca
 
     await db.SaveChangesAsync(cancellationToken);
 
-    return $"Ваша газировка: {survey.Result}.";
+    return result;
 }
 
 ServiceProvider BuildServiceProvider()
