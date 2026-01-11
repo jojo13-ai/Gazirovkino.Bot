@@ -264,13 +264,40 @@ async Task<string> CalculateGazirovka(GazirovkinoDbContext db, Survey survey, Ca
     if (!Enum.IsDefined(typeof(GazirovkaAdditions), survey.Additions))
         return "Ошибка: не выбраны добавки. Попробуйте снова с выбора добавок.";
 
-    survey.Result = "Cola";
+    string result = string.Empty;
+
+    if (survey.Additions == GazirovkaAdditions.Jelly)
+    {
+        result = "A4 Cola";
+    }
+    
+    if (survey.Taste == GazirovkaTaste.CherryTaste)
+    {
+        result = "Dr.Pepper Cherry Crush";
+    }
+    
+    if (survey.Taste == GazirovkaTaste.ColaTaste)
+    {
+        result = "Aziano Cola";
+    }
+    
+    if (survey.Taste == GazirovkaTaste.OrangeTaste)
+    {
+        result = "Fancy";
+    }
+
+    if (string.IsNullOrEmpty(survey.Result))
+    {
+        return "Произошла ошибка, не удалось выбрать газировку";
+    }
+    
+    survey.Result = result;
     survey.Status = SurveyStatus.FinishedSuccessfully;
     survey.DateFinished = DateTime.UtcNow;
 
     await db.SaveChangesAsync(cancellationToken);
 
-    return $"Ваш напиток: {survey.Result}.";
+    return $"Ваша газировка: {survey.Result}.";
 }
 
 ServiceProvider BuildServiceProvider()
