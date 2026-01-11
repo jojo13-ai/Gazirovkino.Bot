@@ -33,24 +33,24 @@ var botUser = await bot.GetMe(); // регистрация нашего бота
 
 var tasteToRu = new Dictionary<GazirovkaTaste, string>
 {
-    { GazirovkaTaste.CherryTaste, "Вишня" },
-    { GazirovkaTaste.OrangeTaste, "Апельсин" },
-    { GazirovkaTaste.ColaTaste, "Кола" }
+    { GazirovkaTaste.CherryTaste, "🍒 Вишня" },
+    { GazirovkaTaste.OrangeTaste, "🍊 Апельсин" },
+    { GazirovkaTaste.ColaTaste, "🥤 Кола" }
 };
 var ruToTaste = tasteToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
 
 var colorToRu = new Dictionary<GazirovkaColor, string>
 {
-    { GazirovkaColor.Dark, "Темный" },
-    { GazirovkaColor.Orange, "Оранжевый" },
-    { GazirovkaColor.Clear, "Прозрачный" }
+    { GazirovkaColor.Dark, "🌑 Темный" },
+    { GazirovkaColor.Orange, "🟠 Оранжевый" },
+    { GazirovkaColor.Clear, "⚪ Прозрачный" }
 };
 var ruToColor = colorToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
 
 var additionsToRu = new Dictionary<GazirovkaAdditions, string>
 {
-    { GazirovkaAdditions.NoAdditions, "Без добавок" },
-    { GazirovkaAdditions.Jelly, "Желе" }
+    { GazirovkaAdditions.NoAdditions, "🚫 Без добавок" },
+    { GazirovkaAdditions.Jelly, "🍮 Желе" }
 };
 var ruToAdditions = additionsToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
 
@@ -98,7 +98,7 @@ async Task OnMessage(Message message, UpdateType type)
         return;
     }
 
-    if (message.Text == "Поиск газировки")
+    if (message.Text == "🔍 Поиск газировки")
     {
         var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
 
@@ -233,7 +233,7 @@ string GetWelcomeMessage()
 
 ReplyKeyboardMarkup GetMainKeyboard()
 {
-    var buttons = new KeyboardButton[] { "Поиск газировки", "Помощь" };
+    var buttons = new KeyboardButton[] { "🔍 Поиск газировки", "ℹ️ Помощь" };
     var keyboard = new[] { buttons };
 
     var keyboardMarkup = new ReplyKeyboardMarkup(keyboard)
