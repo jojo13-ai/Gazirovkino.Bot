@@ -108,6 +108,14 @@ async Task OnMessage(Message message, UpdateType type)
         return;
     }
 
+    if (message.Text == "ℹ️ Помощь")
+    {
+        var helpMessage =
+            "Я помогаю подобрать газировку по вкусу, цвету и добавкам. Нажмите \"Поиск газировки\" и следуйте шагам.";
+        await bot.SendMessage(chatId: message.Chat.Id, text: helpMessage, replyMarkup: GetMainKeyboard());
+        return;
+    }
+
     if (ruToTaste.TryGetValue(message.Text, out var taste))
     {
         var currentSurvey = await GetOrCreateCurrentSurveyAsync(db, user, cts.Token);
