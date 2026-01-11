@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using System.IO;
 using Gazirovkino.Bot.Data;
 using Gazirovkino.Bot.Entities;
 using Gazirovkino.Bot.Entities.Gazirovka;
@@ -131,12 +132,33 @@ async Task OnMessage(Message message, UpdateType type)
         await db.SaveChangesAsync(cts.Token);
 
         var gazirovka = await CalculateGazirovka(db, currentSurvey, cts.Token);
-        var result = $"Ваша газировка: {gazirovka}.";
+        var resultMessage = $"Ваша газировка: {gazirovka}.";
         
-        await bot.SendMessage(
-            chatId: message.Chat.Id,
-            text: gazirovka,
-            replyMarkup: GetMainKeyboard());
+        var storagePath = Path.Combine(Directory.GetCurrentDirectory(), "Storage");
+        string? gazirovkaFilePath = null;
+        if (Directory.Exists(storagePath))
+        {
+            gazirovkaFilePath = Directory.EnumerateFiles(storagePath, $"{gazirovka}.*").FirstOrDefault()
+                ?? Directory.EnumerateFiles(storagePath, gazirovka).FirstOrDefault();
+        }
+
+        if (gazirovkaFilePath is not null)
+        {
+            await using var stream = File.OpenRead(gazirovkaFilePath);
+            var inputFile = InputFile.FromStream(stream, Path.GetFileName(gazirovkaFilePath));
+            await bot.SendPhoto(
+                chatId: message.Chat.Id,
+                photo: inputFile,
+                caption: resultMessage,
+                replyMarkup: GetMainKeyboard());
+        }
+        else
+        {
+            await bot.SendMessage(
+                chatId: message.Chat.Id,
+                text: resultMessage,
+                replyMarkup: GetMainKeyboard());
+        }
         return;
     }
 
