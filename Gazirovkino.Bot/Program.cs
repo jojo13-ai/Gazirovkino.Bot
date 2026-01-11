@@ -134,7 +134,7 @@ async Task OnMessage(Message message, UpdateType type)
         var gazirovka = await CalculateGazirovka(db, currentSurvey, cts.Token);
         var resultMessage = $"Ваша газировка: {gazirovka}.";
         
-        var storagePath = Path.Combine(Directory.GetCurrentDirectory(), "Storage");
+        var storagePath = @"C:\Users\user\RiderProjects\Gazirovkino.Bot\Gazirovkino.Bot\Storage";
         string? gazirovkaFilePath = null;
         if (Directory.Exists(storagePath))
         {
@@ -288,40 +288,40 @@ async Task<string> CalculateGazirovka(GazirovkinoDbContext db, Survey survey, Ca
     if (!Enum.IsDefined(typeof(GazirovkaAdditions), survey.Additions))
         return "Ошибка: не выбраны добавки. Попробуйте снова с выбора добавок.";
 
-    string result = string.Empty;
+    string gazirovka = string.Empty;
 
     if (survey.Additions == GazirovkaAdditions.Jelly)
     {
-        result = "A4 Cola";
+        gazirovka = "A4 Cola";
     }
     
     if (survey.Taste == GazirovkaTaste.CherryTaste)
     {
-        result = "Dr.Pepper Cherry Crush";
+        gazirovka = "Dr.Pepper Cherry Crush";
     }
     
     if (survey.Taste == GazirovkaTaste.ColaTaste)
     {
-        result = "Aziano Cola";
+        gazirovka = "Aziano Cola";
     }
     
     if (survey.Taste == GazirovkaTaste.OrangeTaste)
     {
-        result = "Fancy";
+        gazirovka = "Fancy";
     }
 
-    if (string.IsNullOrEmpty(survey.Result))
+    if (string.IsNullOrEmpty(gazirovka))
     {
         return "Произошла ошибка, не удалось выбрать газировку";
     }
     
-    survey.Result = result;
+    survey.Result = gazirovka;
     survey.Status = SurveyStatus.FinishedSuccessfully;
     survey.DateFinished = DateTime.UtcNow;
 
     await db.SaveChangesAsync(cancellationToken);
 
-    return result;
+    return gazirovka;
 }
 
 ServiceProvider BuildServiceProvider()
