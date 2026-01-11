@@ -10,6 +10,7 @@ using Gazirovkino.Bot.Entities.Gazirovka;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -19,7 +20,9 @@ const string token = ""; //TODO разобраться как не коммит�
 
 using var cts = new CancellationTokenSource();
 
-var serviceProvider = BuildServiceProvider();
+var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
+var serviceProvider = BuildServiceProvider(logsDirectory);
+var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
 var dbOptions = new DbContextOptionsBuilder<GazirovkinoDbContext>().Options;
 await using var dbContext = new GazirovkinoDbContext(dbOptions);
@@ -40,7 +43,7 @@ var colorToRu = new Dictionary<GazirovkaColor, string>
 {
     { GazirovkaColor.Dark, "Темный" },
     { GazirovkaColor.Orange, "Оранжевый" },
-    { GazirovkaColor.Clear, "Прозрачный" }
+    //{ GazirovkaColor.Clear, "Прозрачный" }
 };
 var ruToColor = colorToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
 
@@ -53,7 +56,7 @@ var ruToAdditions = additionsToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
 
 bot.OnMessage += OnMessage;
 
-Console.WriteLine($"@{botUser.Username} is running... Press Enter to terminate");
+logger.LogInformation("@{Username} is running... Press Enter to terminate", botUser.Username);
 Console.ReadLine(); // Блокирует выполнение программы, ожидая ввода.
 cts.Cancel(); // Останавливает работу, посылая сигнал для отмены.
 
@@ -63,18 +66,27 @@ return;
 
 async Task OnMessage(Message message, UpdateType type)
 {
-    if (message.Text is null)
+    if (message.From is null)
         return;
 
-    if (message.From is null)
+    var username = message.From.Username
+                   ?? $"{message.From.FirstName} {message.From.LastName}".Trim();
+    var textForLog = message.Text ?? "<no text>";
+    logger.LogInformation(
+        "Received {UpdateType} '{Text}' from {Username} ({UserId}) in chat {ChatId}",
+        type,
+        textForLog,
+        username,
+        message.From.Id,
+        message.Chat.Id);
+
+    if (message.Text is null)
         return;
 
     await using var scope = serviceProvider.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<GazirovkinoDbContext>();
 
     var user = await GetOrCreateUserAsync(db, message, cts.Token);
-
-    Console.WriteLine($"Received {type} '{message.Text}' in {message.Chat}");
 
     if (message.Text.StartsWith("/start"))
     {
@@ -324,7 +336,7 @@ async Task<string> CalculateGazirovka(GazirovkinoDbContext db, Survey survey, Ca
     return gazirovka;
 }
 
-ServiceProvider BuildServiceProvider()
+ServiceProvider BuildServiceProvider(string logsDirectory)
 {
     var configuration = new ConfigurationBuilder()
         .SetBasePath(AppContext.BaseDirectory)
@@ -334,8 +346,87 @@ ServiceProvider BuildServiceProvider()
                            ?? throw new InvalidOperationException("Missing connection string: GazirovkinoDb");
 
     var services = new ServiceCollection();
+    services.AddLogging(builder =>
+    {
+        builder.ClearProviders();
+        builder.AddProvider(new DailyFileLoggerProvider(logsDirectory));
+        builder.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Error);
+        builder.SetMinimumLevel(LogLevel.Information);
+    });
     services.AddDbContext<GazirovkinoDbContext>(options =>
         options.UseNpgsql(connectionString));
 
     return services.BuildServiceProvider();
+}
+
+sealed class DailyFileLoggerProvider : ILoggerProvider
+{
+    private readonly string _logsDirectory;
+    private readonly object _syncRoot = new();
+
+    public DailyFileLoggerProvider(string logsDirectory)
+    {
+        _logsDirectory = logsDirectory;
+    }
+
+    public ILogger CreateLogger(string categoryName) =>
+        new DailyFileLogger(_logsDirectory, _syncRoot, categoryName);
+
+    public void Dispose()
+    {
+    }
+}
+
+sealed class DailyFileLogger : ILogger
+{
+    private readonly string _logsDirectory;
+    private readonly object _syncRoot;
+    private readonly string _categoryName;
+
+    public DailyFileLogger(string logsDirectory, object syncRoot, string categoryName)
+    {
+        _logsDirectory = logsDirectory;
+        _syncRoot = syncRoot;
+        _categoryName = categoryName;
+    }
+
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+    public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
+
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+    {
+        if (!IsEnabled(logLevel))
+            return;
+
+        var message = formatter(state, exception);
+        if (string.IsNullOrWhiteSpace(message) && exception is null)
+            return;
+
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+        var logLine = $"{timestamp} [{logLevel}] {_categoryName}: {message}";
+        if (exception is not null)
+            logLine = $"{logLine}{Environment.NewLine}{exception}";
+
+        var filePath = Path.Combine(_logsDirectory, $"{DateTime.Now:yyyy-MM-dd}.log");
+
+        lock (_syncRoot)
+        {
+            Directory.CreateDirectory(_logsDirectory);
+            File.AppendAllText(filePath, logLine + Environment.NewLine);
+        }
+    }
+
+    sealed class NullScope : IDisposable
+    {
+        public static readonly NullScope Instance = new();
+        public void Dispose()
+        {
+        }
+    }
 }
