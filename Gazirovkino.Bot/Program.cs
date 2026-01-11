@@ -43,7 +43,7 @@ var colorToRu = new Dictionary<GazirovkaColor, string>
 {
     { GazirovkaColor.Dark, "Темный" },
     { GazirovkaColor.Orange, "Оранжевый" },
-    //{ GazirovkaColor.Clear, "Прозрачный" }
+    { GazirovkaColor.Clear, "Прозрачный" }
 };
 var ruToColor = colorToRu.ToDictionary(kv => kv.Value, kv => kv.Key);
 
@@ -322,6 +322,11 @@ async Task<string> CalculateGazirovka(GazirovkinoDbContext db, Survey survey, Ca
         gazirovka = "A4 Cola";
     }
 
+    if (survey.Color == GazirovkaColor.Clear)
+    {
+        gazirovka = "Не удалось подобрать газировку. Ожидайте прозрачные газировки в следующем обновлении.";
+    }
+    
     if (string.IsNullOrEmpty(gazirovka))
     {
         return "Произошла ошибка, не удалось выбрать газировку";

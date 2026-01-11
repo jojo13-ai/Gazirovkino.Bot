@@ -4,5 +4,5 @@ public enum GazirovkaColor
 {
     Dark,
     Orange,
-    //Clear
+    Clear
 }
